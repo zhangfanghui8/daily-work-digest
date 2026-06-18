@@ -1,0 +1,44 @@
+# 复制本文件为 config.yaml 后修改
+
+timezone: Asia/Shanghai
+
+git:
+  # 要扫描的 Git 仓库绝对路径（填你日常写代码、有 .git 的项目）
+  repos:
+    - D:/javaPro/your-project-name
+    # - D:/javaPro/another-project
+  # 本工具目录 daily-work-digest 若未 git init，不要配置在这里
+  # 可选：仅采集指定邮箱的提交；留空则采集仓库内所有作者
+  author_email: ""
+  # 是否排除 merge commit
+  exclude_merges: true
+  # commit message 正则，命中则跳过
+  exclude_patterns:
+    - "^Merge "
+    - "^wip"
+    - "^WIP"
+    - "^temp:"
+    - "^temp "
+
+manual:
+  enabled: true
+
+# 企业微信日程（CalDAV，方式 1）
+# 手机：工作台 → 日程 → … → 同步至其他日历 → 复制用户名/密码
+wecom:
+  enabled: false
+  caldav:
+    server: https://caldav.wecom.work
+    username: ""
+    password: ""
+    # 可选：企微日历数字 ID，403 时可填。路径形如 /calendar/1688855375594291/
+    calendar_id: ""
+
+tags:
+  commit_fix: ["开发", "bugfix"]
+  commit_feat: ["开发", "功能"]
+  commit_docs: ["文档"]
+  commit_refactor: ["开发", "重构"]
+  manual_meeting: ["会议", "协作"]
+  manual_default: ["协作"]
+  calendar_meeting: ["会议", "协作"]
