@@ -322,6 +322,90 @@ def _fetch_via_ics_list(
     return ics_texts
 
 
+def _fetch_via_multiget(
+    client: httpx.Client,
+    calendar_url: str,
+) -> list[str]:
+    """飞书兼容：PROPFIND 列出 .ics，再 calendar-multiget 获取 calendar-data。
+
+    飞书 CalDAV 不支持 calendar-query REPORT（返回空结果），也不允许 GET
+    单个 .ics 文件（403），但支持 calendar-multiget 批量获取已列出的资源。
+    """
+    list_body = """<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:getetag/>
+    <D:getcontenttype/>
+  </D:prop>
+</D:propfind>"""
+
+    xml_root = _propfind(client, calendar_url, list_body, depth="1")
+    hrefs = [h for h in _list_hrefs(xml_root) if h.lower().endswith(".ics")]
+
+    if not hrefs:
+        return []
+
+    href_xml = "\n".join(f"    <D:href>{h}</D:href>" for h in hrefs)
+    multiget_body = f"""<?xml version="1.0" encoding="UTF-8"?>
+<C:calendar-multiget xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:prop>
+    <D:getetag/>
+    <C:calendar-data/>
+  </D:prop>
+{href_xml}
+</C:calendar-multiget>"""
+
+    xml_root2 = _report(client, calendar_url, multiget_body, depth="1")
+    return _extract_calendar_data(xml_root2)
+
+
+def _calendar_not_found_message(provider: str) -> str:
+    hints = {
+        "wecom": (
+            "未找到企微 CalDAV 日历路径。"
+            "请在 config.yaml 的 wecom.caldav.calendar_id 填写企业日历 ID（数字），"
+            "或确认用户名/密码来自手机「同步至其他日历」而非登录密码。"
+        ),
+        "feishu": (
+            "未找到飞书 CalDAV 日历路径。"
+            "请在飞书桌面端「设置 → 日历 → CalDAV 同步」重新生成专用账号密码；"
+            "服务器通常为 https://caldav.feishu.cn；"
+            "若仍失败可配置 feishu.caldav.calendar_id（日历 URL 或路径）。"
+        ),
+    }
+    return hints.get(provider, "未找到 CalDAV 日历路径，请检查 server、username、password 配置。")
+
+
+def _discover_feishu_calendar_urls(
+    client: httpx.Client,
+    base_url: str,
+    calendar_id: str | None,
+) -> list[str]:
+    cal_id = (calendar_id or "").strip()
+    if cal_id.startswith("http://") or cal_id.startswith("https://"):
+        url = cal_id.rstrip("/")
+        return [url if url.endswith("/") else url + "/"]
+
+    urls = _discover_generic_calendar_urls(client, base_url)
+    if urls:
+        return urls
+
+    if cal_id:
+        host = f"{urlparse(base_url).scheme}://{urlparse(base_url).netloc}"
+        path = cal_id if cal_id.startswith("/") else f"/{cal_id}"
+        url = f"{host}{path}".rstrip("/") + "/"
+        return [url]
+
+    # 飞书部分环境需从 /dav/ 探测
+    host = f"{urlparse(base_url).scheme}://{urlparse(base_url).netloc}"
+    for probe in (f"{host}/dav/", base_url):
+        found = _discover_generic_calendar_urls(client, probe.rstrip("/"))
+        if found:
+            return found
+
+    return []
+
+
 def fetch_caldav_entries(
     server: str,
     username: str,
@@ -348,15 +432,13 @@ def fetch_caldav_entries(
     with httpx.Client(auth=(username, password), timeout=30.0, follow_redirects=True) as client:
         if provider == "wecom":
             calendar_urls = _discover_wecom_calendar_urls(client, base_url, calendar_id)
+        elif provider == "feishu":
+            calendar_urls = _discover_feishu_calendar_urls(client, base_url, calendar_id)
         else:
             calendar_urls = _discover_generic_calendar_urls(client, base_url)
 
         if not calendar_urls:
-            raise RuntimeError(
-                "未找到企微 CalDAV 日历路径。"
-                "请在 config.yaml 的 wecom.caldav.calendar_id 填写企业日历 ID（数字），"
-                "或确认用户名/密码来自「同步至其他日历」而非登录密码。"
-            )
+            raise RuntimeError(_calendar_not_found_message(provider))
 
         for calendar_url in calendar_urls:
             ics_texts: list[str] = []
@@ -364,6 +446,12 @@ def fetch_caldav_entries(
                 ics_texts = _fetch_via_calendar_query(client, calendar_url, query_body)
             except httpx.HTTPError as exc:
                 errors.append(f"REPORT {calendar_url}: {exc}")
+
+            if not ics_texts and provider == "feishu":
+                try:
+                    ics_texts = _fetch_via_multiget(client, calendar_url)
+                except httpx.HTTPError as exc:
+                    errors.append(f"multiget {calendar_url}: {exc}")
 
             if not ics_texts:
                 try:
@@ -377,6 +465,13 @@ def fetch_caldav_entries(
     if not entries and errors:
         detail = errors[0]
         if "403" in detail:
+            if provider == "feishu":
+                raise RuntimeError(
+                    f"{detail}。"
+                    "常见原因：1) CalDAV 专用密码过期，请在飞书重新生成；"
+                    "2) 用户名/密码须来自「CalDAV 同步」而非飞书登录密码；"
+                    "3) 可配置 feishu.caldav.calendar_id。"
+                )
             raise RuntimeError(
                 f"{detail}。"
                 "常见原因：1) 同步密码过期，请手机重新获取；"
@@ -412,7 +507,7 @@ def _discover_generic_calendar_urls(client: httpx.Client, base_url: str) -> list
     if not calendar_home:
         return []
 
-    home_url = urljoin(base_url + "/", calendar_home.lstrip("/"))
+    home_url = _resolve_href(base_url, calendar_home)
     list_body = """<?xml version="1.0" encoding="utf-8"?>
 <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
   <D:prop>
