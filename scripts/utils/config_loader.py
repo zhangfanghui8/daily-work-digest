@@ -36,6 +36,15 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "calendar_id": "",
         },
     },
+    "feishu": {
+        "enabled": False,
+        "caldav": {
+            "server": "https://caldav.feishu.cn",
+            "username": "",
+            "password": "",
+            "calendar_id": "",
+        },
+    },
 }
 
 

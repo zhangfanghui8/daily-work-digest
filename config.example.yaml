@@ -34,6 +34,17 @@ wecom:
     # 可选：企微日历数字 ID，403 时可填。路径形如 /calendar/1688855375594291/
     calendar_id: ""
 
+# 飞书日程（CalDAV）
+# 飞书桌面端：日历 → 设置 → CalDAV 同步 → 获取专用账号密码
+feishu:
+  enabled: false
+  caldav:
+    server: https://caldav.feishu.cn
+    username: ""
+    password: ""
+    # 可选：日历 ID，403 时可填
+    calendar_id: ""
+
 tags:
   commit_fix: ["开发", "bugfix"]
   commit_feat: ["开发", "功能"]

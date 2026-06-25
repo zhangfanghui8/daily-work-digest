@@ -106,7 +106,31 @@ def wecom_schedule_to_events(
             {
                 "id": f"wecom-{entry.get('id', len(events)+1)}",
                 "time": entry.get("time") or "09:00:00",
-                "source": "calendar",
+                "source": "wecom",
+                "type": "meeting",
+                "title": title,
+                "detail": entry.get("detail") or "",
+                "url": "",
+                "tags": list(default_tags),
+                "raw": entry,
+            }
+        )
+    return events
+
+
+def feishu_schedule_to_events(
+    raw: dict[str, Any],
+    tags_cfg: dict[str, Any],
+) -> list[dict[str, Any]]:
+    default_tags = list(tags_cfg.get("calendar_meeting") or ["会议", "协作"])
+    events: list[dict[str, Any]] = []
+    for entry in raw.get("entries") or []:
+        title = entry.get("title") or "无标题日程"
+        events.append(
+            {
+                "id": f"feishu-{entry.get('id', len(events)+1)}",
+                "time": entry.get("time") or "09:00:00",
+                "source": "feishu",
                 "type": "meeting",
                 "title": title,
                 "detail": entry.get("detail") or "",
@@ -177,6 +201,11 @@ def _load_raw_events(date_str: str, tags_cfg: dict[str, Any]) -> list[dict[str, 
     if wecom_file.is_file():
         wecom_raw = json.loads(wecom_file.read_text(encoding="utf-8"))
         events.extend(wecom_schedule_to_events(wecom_raw, tags_cfg))
+
+    feishu_file = day_raw / "feishu_schedule.json"
+    if feishu_file.is_file():
+        feishu_raw = json.loads(feishu_file.read_text(encoding="utf-8"))
+        events.extend(feishu_schedule_to_events(feishu_raw, tags_cfg))
 
     return events
 

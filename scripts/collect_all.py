@@ -38,7 +38,7 @@ def main() -> None:
     parser.add_argument(
         "--sources",
         default="all",
-        help="采集渠道，逗号分隔：git,manual,wecom,all（默认 all）",
+        help="采集渠道，逗号分隔：git,manual,wecom,feishu,all（默认 all）",
     )
     parser.add_argument("--week", action="store_true", help="采集后额外生成本周周报 digest")
     parser.add_argument("--config", type=Path, default=None)
