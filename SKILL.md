@@ -26,14 +26,14 @@ author: 用户
 | 手动补记 | `collectors/manual.py` · `ManualCollector` | ✅ 已实现 |
 | 企业微信日程 | `collectors/wecom_schedule.py` · CalDAV | ✅ 已实现 |
 | 飞书日程 | `collectors/feishu_schedule.py` · CalDAV | ✅ 已实现 |
-| 钉钉日程 | 复用 `collectors/calendar/caldav_client.py` | 🔜 待接入 |
+| 钉钉日程 | `collectors/dingtalk_schedule.py` · CalDAV | ✅ 已实现 |
 | 聊天记录 | `collectors/chat.py`（规划） | 🔜 待接入 |
 | 文档库 | `collectors/docs.py`（规划） | 🔜 待接入 |
 | PR / Issue | `collectors/issue.py`（规划） | 🔜 待接入 |
 
 **L1 对外入口**：`scripts/collect_all.py`（调度各 Collector，继承 `BaseCollector`）
 
-**说明**：企微/飞书日程需在 `config.yaml` 配置 CalDAV 账号（见 `docs/企微日程采集-用户指南.md`、`docs/飞书日程采集-用户指南.md`）。成文时只使用**已采集**渠道的数据。
+**说明**：企微/飞书/钉钉日程需在 `config.yaml` 配置 CalDAV 账号（见 `docs/企微日程采集-用户指南.md`、`docs/飞书日程采集-用户指南.md`、`docs/钉钉日程采集-用户指南.md`）。成文时只使用**已采集**渠道的数据。
 
 ## 环境准备（Agent 必读）
 
@@ -140,7 +140,7 @@ python scripts/merge_daily.py --date YYYY-MM-DD
 
 ```bash
 python scripts/collect_all.py --date today
-python scripts/collect_all.py --date today --sources git,manual,wecom,feishu --collect-only
+python scripts/collect_all.py --date today --sources git,manual,wecom,feishu,dingtalk --collect-only
 python scripts/merge_daily.py --date yesterday
 python scripts/merge_daily.py --date today --week
 ```

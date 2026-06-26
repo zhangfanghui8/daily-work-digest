@@ -45,6 +45,15 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "calendar_id": "",
         },
     },
+    "dingtalk": {
+        "enabled": False,
+        "caldav": {
+            "server": "https://caldav.mxhichina.com",
+            "username": "",
+            "password": "",
+            "calendar_id": "",
+        },
+    },
 }
 
 

@@ -45,6 +45,17 @@ feishu:
     # 可选：日历 ID，403 时可填
     calendar_id: ""
 
+# 钉钉日程（CalDAV）
+# PC 端钉钉：日历 → 设置 → CalDAV 同步 → 生成专用账号密码
+dingtalk:
+  enabled: false
+  caldav:
+    server: https://caldav.mxhichina.com
+    username: ""
+    password: ""
+    # 可选：日历 ID，403 时可填
+    calendar_id: ""
+
 tags:
   commit_fix: ["开发", "bugfix"]
   commit_feat: ["开发", "功能"]

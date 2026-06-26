@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Type
 
 from .base import BaseCollector
+from .dingtalk_schedule import DingTalkScheduleCollector
 from .feishu_schedule import FeishuScheduleCollector
 from .git import GitCollector
 from .manual import ManualCollector
@@ -15,6 +16,7 @@ ALL_COLLECTORS: list[Type[BaseCollector]] = [
     ManualCollector,
     WeComScheduleCollector,
     FeishuScheduleCollector,
+    DingTalkScheduleCollector,
 ]
 
 __all__ = [
@@ -23,6 +25,7 @@ __all__ = [
     "ManualCollector",
     "WeComScheduleCollector",
     "FeishuScheduleCollector",
+    "DingTalkScheduleCollector",
     "ALL_COLLECTORS",
     "get_enabled_collectors",
     "run_collectors",

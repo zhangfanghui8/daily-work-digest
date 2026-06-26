@@ -372,8 +372,44 @@ def _calendar_not_found_message(provider: str) -> str:
             "服务器通常为 https://caldav.feishu.cn；"
             "若仍失败可配置 feishu.caldav.calendar_id（日历 URL 或路径）。"
         ),
+        "dingtalk": (
+            "未找到钉钉 CalDAV 日历路径。"
+            "请在PC端钉钉「日历 → 设置 → CalDAV同步」重新生成专用账号密码；"
+            "服务器通常为 https://caldav.mxhichina.com；"
+            "若仍失败可配置 dingtalk.caldav.calendar_id（日历 URL 或路径）。"
+        ),
     }
     return hints.get(provider, "未找到 CalDAV 日历路径，请检查 server、username、password 配置。")
+
+
+def _discover_dingtalk_calendar_urls(
+    client: httpx.Client,
+    base_url: str,
+    calendar_id: str | None,
+) -> list[str]:
+    cal_id = (calendar_id or "").strip()
+    if cal_id.startswith("http://") or cal_id.startswith("https://"):
+        url = cal_id.rstrip("/")
+        return [url if url.endswith("/") else url + "/"]
+
+    urls = _discover_generic_calendar_urls(client, base_url)
+    if urls:
+        return urls
+
+    if cal_id:
+        host = f"{urlparse(base_url).scheme}://{urlparse(base_url).netloc}"
+        path = cal_id if cal_id.startswith("/") else f"/{cal_id}"
+        url = f"{host}{path}".rstrip("/") + "/"
+        return [url]
+
+    # 钉钉部分环境需从 /dav/ 探测
+    host = f"{urlparse(base_url).scheme}://{urlparse(base_url).netloc}"
+    for probe in (f"{host}/dav/", base_url):
+        found = _discover_generic_calendar_urls(client, probe.rstrip("/"))
+        if found:
+            return found
+
+    return []
 
 
 def _discover_feishu_calendar_urls(
@@ -434,6 +470,8 @@ def fetch_caldav_entries(
             calendar_urls = _discover_wecom_calendar_urls(client, base_url, calendar_id)
         elif provider == "feishu":
             calendar_urls = _discover_feishu_calendar_urls(client, base_url, calendar_id)
+        elif provider == "dingtalk":
+            calendar_urls = _discover_dingtalk_calendar_urls(client, base_url, calendar_id)
         else:
             calendar_urls = _discover_generic_calendar_urls(client, base_url)
 
@@ -471,6 +509,13 @@ def fetch_caldav_entries(
                     "常见原因：1) CalDAV 专用密码过期，请在飞书重新生成；"
                     "2) 用户名/密码须来自「CalDAV 同步」而非飞书登录密码；"
                     "3) 可配置 feishu.caldav.calendar_id。"
+                )
+            if provider == "dingtalk":
+                raise RuntimeError(
+                    f"{detail}。"
+                    "常见原因：1) CalDAV 专用密码过期，请在钉钉重新生成；"
+                    "2) 用户名/密码须来自「CalDAV同步」而非钉钉登录密码；"
+                    "3) 可配置 dingtalk.caldav.calendar_id。"
                 )
             raise RuntimeError(
                 f"{detail}。"

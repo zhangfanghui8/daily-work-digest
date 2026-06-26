@@ -25,7 +25,7 @@
 | **手动补记** | 可选，在 `data/manual/` 写 Markdown 即可 |
 | **企业微信日程** | 可选，需配置 CalDAV 账号（见下方文档） |
 | **飞书日程** | 可选，需配置 CalDAV 账号（飞书桌面端获取） |
-| 钉钉日程 | 规划中 |
+| **钉钉日程** | 可选，需配置 CalDAV 账号（钉钉客户端获取） |
 | 聊天记录、文档等 | 规划中 |
 
 ---
@@ -73,6 +73,7 @@ python scripts/collect_all.py --date today
 - **手动补记**：在 `data/manual/` 按日期写 Markdown，记录会议、沟通等。格式见 [手动补记示例](docs/手动补记示例.md)。
 - **企业微信日程**：手机企微「日程 → 同步至其他日历」获取账号密码。详见 [企微指南](docs/企微日程采集-用户指南.md)。
 - **飞书日程**：飞书桌面端「设置 → 日历 → CalDAV 同步」生成专用账号密码。详见 [飞书指南](docs/飞书日程采集-用户指南.md)。
+- **钉钉日程**：PC 端钉钉「日历 → 设置 → CalDAV 同步」生成专用账号密码，服务器 `caldav.mxhichina.com`。
 - **定时采集**：可用 Windows 任务计划程序每天固定时间运行 `collect_all.py`，详见 [快速开始](docs/快速开始.md)。
 
 ---
@@ -84,6 +85,7 @@ python scripts/collect_all.py --date today
 | 采集结果为空 | 当天可能没有 Git 提交；可用手动补记或检查 `git.repos` 路径 |
 | 企微日程报 403 | 重新获取同步密码，或查看 [企微指南](docs/企微日程采集-用户指南.md) |
 | 飞书日程认证失败 | 在飞书重新生成 CalDAV 密码，见 [飞书指南](docs/飞书日程采集-用户指南.md) |
+| 钉钉日程认证失败 | 在钉钉重新生成 CalDAV 密码，服务器通常为 `caldav.mxhichina.com` |
 | 找不到 config.yaml | 从 `config.example.yaml` 复制一份 |
 
 更多安装与排错说明见 **[快速开始](docs/快速开始.md)**。架构与实现细节见 **[技术文档](docs/技术文档.md)**。
@@ -98,6 +100,7 @@ python scripts/collect_all.py --date today
 | [手动补记示例](docs/手动补记示例.md) | 无 Git 痕迹的工作如何补记 |
 | [企微日程采集](docs/企微日程采集-用户指南.md) | CalDAV 配置与 403 排查 |
 | [飞书日程采集](docs/飞书日程采集-用户指南.md) | CalDAV 配置与认证 |
+| [钉钉日程采集](docs/钉钉日程采集-用户指南.md) | CalDAV 配置与认证 |
 | [技术文档](docs/技术文档.md) | 架构、数据模型、路线图（开发者） |
 
 > **发布前提醒**：`config.yaml` 含个人路径与密钥，已在 `.gitignore` 中，请勿 `git add` 提交。
