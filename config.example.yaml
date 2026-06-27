@@ -34,9 +34,9 @@ wecom:
     # 可选：企微日历数字 ID，403 时可填。路径形如 /calendar/1688855375594291/
     calendar_id: ""
 
-# 飞书日程（CalDAV）
-# 飞书桌面端：日历 → 设置 → CalDAV 同步 → 获取专用账号密码
+# 飞书
 feishu:
+  # 日程（CalDAV）：飞书桌面端 日历 → 设置 → CalDAV 同步
   enabled: false
   caldav:
     server: https://caldav.feishu.cn
@@ -44,6 +44,23 @@ feishu:
     password: ""
     # 可选：日历 ID，403 时可填
     calendar_id: ""
+  # IM（开放平台 API）：需自建应用 + 申请权限，见 docs/飞书IM采集-用户指南.md
+  chat:
+    enabled: false
+    app_id: ""
+    app_secret: ""
+    base_url: https://open.feishu.cn
+    # 群聊 open_chat_id（机器人须已入群）；单聊填 p2p_chat_ids
+    chat_ids: []
+    p2p_chat_ids: []
+    # 过滤：仅采集自己发送 / @ 自己的消息（需填 my_open_id）
+    only_my_messages: false
+    only_mention_me: false
+    my_open_id: ""
+    keywords: []
+    exclude_keywords: []
+    page_size: 50
+    max_pages: 20
 
 # 钉钉日程（CalDAV）
 # PC 端钉钉：日历 → 设置 → CalDAV 同步 → 生成专用账号密码
@@ -64,3 +81,4 @@ tags:
   manual_meeting: ["会议", "协作"]
   manual_default: ["协作"]
   calendar_meeting: ["会议", "协作"]
+  feishu_chat: ["协作", "沟通"]

@@ -142,6 +142,30 @@ def feishu_schedule_to_events(
     return events
 
 
+def feishu_chat_to_events(
+    raw: dict[str, Any],
+    tags_cfg: dict[str, Any],
+) -> list[dict[str, Any]]:
+    default_tags = list(tags_cfg.get("feishu_chat") or tags_cfg.get("manual_default") or ["协作", "沟通"])
+    events: list[dict[str, Any]] = []
+    for entry in raw.get("entries") or []:
+        title = entry.get("title") or "飞书消息"
+        events.append(
+            {
+                "id": f"feishu-chat-{entry.get('id', len(events)+1)}",
+                "time": entry.get("time") or "12:00:00",
+                "source": "feishu",
+                "type": "chat",
+                "title": title,
+                "detail": entry.get("detail") or "",
+                "url": "",
+                "tags": list(default_tags),
+                "raw": entry,
+            }
+        )
+    return events
+
+
 def dingtalk_schedule_to_events(
     raw: dict[str, Any],
     tags_cfg: dict[str, Any],
@@ -230,6 +254,11 @@ def _load_raw_events(date_str: str, tags_cfg: dict[str, Any]) -> list[dict[str, 
     if feishu_file.is_file():
         feishu_raw = json.loads(feishu_file.read_text(encoding="utf-8"))
         events.extend(feishu_schedule_to_events(feishu_raw, tags_cfg))
+
+    feishu_chat_file = day_raw / "feishu_chat.json"
+    if feishu_chat_file.is_file():
+        feishu_chat_raw = json.loads(feishu_chat_file.read_text(encoding="utf-8"))
+        events.extend(feishu_chat_to_events(feishu_chat_raw, tags_cfg))
 
     dingtalk_file = day_raw / "dingtalk_schedule.json"
     if dingtalk_file.is_file():

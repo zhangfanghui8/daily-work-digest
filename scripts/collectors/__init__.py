@@ -5,6 +5,7 @@ from typing import Type
 
 from .base import BaseCollector
 from .dingtalk_schedule import DingTalkScheduleCollector
+from .feishu_chat import FeishuChatCollector
 from .feishu_schedule import FeishuScheduleCollector
 from .git import GitCollector
 from .manual import ManualCollector
@@ -16,6 +17,7 @@ ALL_COLLECTORS: list[Type[BaseCollector]] = [
     ManualCollector,
     WeComScheduleCollector,
     FeishuScheduleCollector,
+    FeishuChatCollector,
     DingTalkScheduleCollector,
 ]
 
@@ -25,6 +27,7 @@ __all__ = [
     "ManualCollector",
     "WeComScheduleCollector",
     "FeishuScheduleCollector",
+    "FeishuChatCollector",
     "DingTalkScheduleCollector",
     "ALL_COLLECTORS",
     "get_enabled_collectors",
