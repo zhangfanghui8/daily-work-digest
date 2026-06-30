@@ -7,6 +7,8 @@ config.yaml
 .vscode/
 
 # 采集数据（本地隐私）
+data/.feishu_oauth.json
+.feishu_oauth.json
 data/raw/
 data/digest/
 data/manual/

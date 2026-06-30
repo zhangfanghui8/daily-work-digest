@@ -27,14 +27,46 @@ author: 用户
 | 企业微信日程 | `collectors/wecom_schedule.py` · CalDAV | ✅ 已实现 |
 | 飞书日程 | `collectors/feishu_schedule.py` · CalDAV | ✅ 已实现 |
 | 飞书 IM | `collectors/feishu_chat.py` · 开放平台 API | ✅ 已实现 |
+| 飞书文档 | `collectors/feishu_docs.py` · 搜索 API（L1 元数据） | ✅ 已实现 |
 | 钉钉日程 | `collectors/dingtalk_schedule.py` · CalDAV | ✅ 已实现 |
-| 聊天记录（其它平台） | 规划中 | 🔜 待接入 |
-| 文档库 | `collectors/docs.py`（规划） | 🔜 待接入 |
+| 语雀文档 | 规划中 | 🔜 待接入 |
 | PR / Issue | `collectors/issue.py`（规划） | 🔜 待接入 |
 
 **L1 对外入口**：`scripts/collect_all.py`（调度各 Collector，继承 `BaseCollector`）
 
-**说明**：企微/飞书/钉钉日程需在 `config.yaml` 配置 CalDAV 账号（见对应用户指南）。飞书 IM 需自建应用与 `feishu.chat` 配置（见 `docs/飞书IM采集-用户指南.md`）。成文时只使用**已采集**渠道的数据。
+**说明**：企微/飞书/钉钉日程需在 `config.yaml` 配置 CalDAV 账号。飞书 IM / 飞书文档需自建应用；**文档 token 由 Agent 运行 `feishu_oauth.py --login` 获取，用户只需在浏览器点「同意」**（见下文「飞书文档授权」）。成文时只使用**已采集**渠道的数据。
+
+### 飞书文档授权（Agent 必读，面向非技术用户）
+
+飞书要求用户在浏览器里**点一次「同意授权」**，这一步无法由程序代劳；除此以外 **Agent 应全部自动完成**，不要把命令行步骤丢给用户。
+
+**检测**：`feishu.docs.enabled` 且 `data/.feishu_oauth.json`（或 `token_cache` 路径）是否存在且有效。
+
+**若缺少 token，Agent 执行：**
+
+1. 确认 `config.yaml` 已有 `feishu.docs.app_id` / `app_secret`（可与 `feishu.chat` 共用）；若缺，用白话请管理员提供或引导复制开放平台凭证。
+2. 告知用户：「接下来会打开浏览器，请在飞书页面点 **同意/授权**，然后回来告诉我即可。」
+3. 运行：
+
+```bash
+python scripts/feishu_oauth.py --login
+```
+
+4. 若报 **20027 offline_access**，改用：
+
+```bash
+python scripts/feishu_oauth.py --login --no-offline
+```
+
+5. 成功后运行采集：
+
+```bash
+python scripts/collect_all.py --date today --sources feishu_docs
+```
+
+**用户只需说**：「帮我连接飞书文档」「配置飞书文档采集」——Agent 按上述流程处理。
+
+**一次性前置（通常由管理员完成，非每次）**：开放平台配置重定向 URL `http://127.0.0.1:8765/callback`、权限 `search:docs:read`（可选 `offline_access`）。详见 `docs/飞书文档采集-用户指南.md`。
 
 ## 环境准备（Agent 必读）
 

@@ -61,6 +61,27 @@ feishu:
     exclude_keywords: []
     page_size: 50
     max_pages: 20
+  # 文档（搜索 API）：需 OAuth 用户授权，见 docs/飞书文档采集-用户指南.md
+  docs:
+    enabled: false
+    app_id: ""
+    app_secret: ""
+    base_url: https://open.feishu.cn
+    # OAuth token 缓存在项目目录（运行 feishu_oauth.py 后自动生成，勿提交 Git）
+    token_cache: data/.feishu_oauth.json
+    redirect_uri: http://127.0.0.1:8765/callback
+    query: ""
+    include_types:
+      - DOC
+      - DOCX
+      - SHEET
+      - BITABLE
+      - WIKI
+      - MINDNOTE
+      - SLIDES
+    page_size: 20
+    max_pages: 10
+    search_padding_days: 7
 
 # 钉钉日程（CalDAV）
 # PC 端钉钉：日历 → 设置 → CalDAV 同步 → 生成专用账号密码
@@ -82,3 +103,4 @@ tags:
   manual_default: ["协作"]
   calendar_meeting: ["会议", "协作"]
   feishu_chat: ["协作", "沟通"]
+  feishu_docs: ["文档", "产出"]

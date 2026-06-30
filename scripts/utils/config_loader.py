@@ -27,6 +27,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "manual_default": ["协作"],
         "calendar_meeting": ["会议", "协作"],
         "feishu_chat": ["协作", "沟通"],
+        "feishu_docs": ["文档", "产出"],
     },
     "wecom": {
         "enabled": False,
@@ -59,6 +60,19 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "exclude_keywords": [],
             "page_size": 50,
             "max_pages": 20,
+        },
+        "docs": {
+            "enabled": False,
+            "app_id": "",
+            "app_secret": "",
+            "base_url": "https://open.feishu.cn",
+            "token_cache": "data/.feishu_oauth.json",
+            "redirect_uri": "http://127.0.0.1:8765/callback",
+            "query": "",
+            "include_types": ["DOC", "DOCX", "SHEET", "BITABLE", "WIKI", "MINDNOTE", "SLIDES"],
+            "page_size": 20,
+            "max_pages": 10,
+            "search_padding_days": 7,
         },
     },
     "dingtalk": {
