@@ -4,6 +4,7 @@ timezone: Asia/Shanghai
 
 git:
   # 要扫描的 Git 仓库绝对路径（填你日常写代码、有 .git 的项目）
+  # 采集范围：仓库内所有本地/远程跟踪分支（git log --all），不限当前检出分支
   repos:
     - D:/javaPro/your-project-name
     # - D:/javaPro/another-project

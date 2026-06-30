@@ -32,6 +32,32 @@ def _should_exclude(message: str, patterns: list[str]) -> bool:
     return False
 
 
+def _branch_from_decorated_refs(refs: str) -> str:
+    """从 git log %D 装饰信息提取分支名（优先本地分支）。"""
+    refs = (refs or "").strip()
+    if not refs:
+        return ""
+    local: list[str] = []
+    remote: list[str] = []
+    for segment in refs.split(","):
+        segment = segment.strip()
+        if "->" in segment:
+            segment = segment.split("->", 1)[1].strip()
+        if not segment or segment == "HEAD":
+            continue
+        if segment.startswith("tag:"):
+            continue
+        if segment.startswith("origin/"):
+            remote.append(segment.removeprefix("origin/"))
+        else:
+            local.append(segment)
+    if local:
+        return local[0]
+    if remote:
+        return remote[0]
+    return ""
+
+
 def _parse_log_output(text: str) -> list[dict[str, Any]]:
     commits: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
@@ -46,15 +72,16 @@ def _parse_log_output(text: str) -> list[dict[str, Any]]:
                 current["insertions"] = insertions
                 current["deletions"] = deletions
                 commits.append(current)
-            parts = line.split("|", 5)
-            if len(parts) < 6:
+            parts = line.split("|", 6)
+            if len(parts) < 7:
                 continue
-            _, commit_hash, authored, author_name, author_email, message = parts
+            _, commit_hash, authored, author_name, author_email, refs, message = parts
             current = {
                 "hash": commit_hash,
                 "authored_at": authored.strip(),
                 "author_name": author_name.strip(),
                 "author_email": author_email.strip(),
+                "refs": refs.strip(),
                 "message": message.strip(),
                 "files_changed": 0,
                 "insertions": 0,
@@ -139,9 +166,10 @@ class GitCollector(BaseCollector):
 
         args = [
             "log",
+            "--all",
             f"--since={start_iso}",
             f"--until={end_iso}",
-            "--pretty=format:COMMIT|%H|%ai|%an|%ae|%s",
+            "--pretty=format:COMMIT|%H|%ai|%an|%ae|%D|%s",
             "--numstat",
         ]
         if git_cfg.get("exclude_merges", True):
@@ -159,7 +187,8 @@ class GitCollector(BaseCollector):
         for item in _parse_log_output(log_text):
             if _should_exclude(item["message"], exclude_patterns):
                 continue
-            item["branch"] = branch
+            refs = item.pop("refs", "")
+            item["branch"] = _branch_from_decorated_refs(refs) or branch
             item["remote"] = remote
             commits.append(item)
 

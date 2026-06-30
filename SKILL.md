@@ -154,11 +154,30 @@ python scripts/merge_daily.py --date today
 
 3. 读取 `data/digest/{date}.json`、`data/manual/{date}.md`（若存在）、`templates/daily.md`。
 4. 按模板输出日报：
-   - **仅**使用 digest.events 与 manual 中的条目
-   - 将 commit message 改写为业务可读描述（结合 `detail` 中的 repo、文件变更数）
-   - 按 tags 分组：开发 / 协作 / 文档 / 会议
+   - **仅**使用 digest.events 与 manual 中的条目填写 **「今日完成」**
+   - **「进行中 / 明日计划 / 风险与阻塞」留空**（写 `-` 占位），供用户自行补充，Agent 不推断、不编造
+   - **今日完成**按两个维度组织：
+     - **大维度**：代码开发 · 日程 · 文档 · IM
+     - **小维度（渠道）**：大维度下的具体来源，见下表
+   - **渠道无 events 时**，读取 digest.`channels` 区分（**禁止混写、禁止编造**）：
+     - `status=empty` →「**{label}：当日无记录**」（不写括号说明）
+     - `status=failed` →「**{label}：采集失败**（{message}）」——**仅失败时用括号写原因**
+     - `status=not_collected` →「**{label}：未采集**（{message}）」
+     - `status=ok` 且有 events → 正常列出，不写「采集成功」
+     - 未出现在 `channels` → 配置未启用，成文省略
+   - 将 commit message 改写为业务可读描述（结合 `detail` 中的 repo、分支、文件变更数）
    - 同类 commit 可合并为一条摘要
 5. 询问用户是否有遗漏；若有，追加到 `data/manual/{date}.md` 后重新执行 `merge_daily.py`。
+
+**digest → 维度映射（Agent 成文）**
+
+| 大维度 | 小维度（渠道） | digest 识别 |
+|--------|----------------|-------------|
+| 代码开发 | Git 仓库（如 WdDataAgent） | `source=git`, `type=commit` |
+| 日程 | 企微 / 飞书 / 钉钉 | `source=wecom\|feishu\|dingtalk`, `type=meeting` |
+| 文档 | 飞书文档 / 语雀 | `source=feishu`, `type=document`；`source=yuque`, `type=document` |
+| IM | 飞书 IM | `source=feishu`, `type=chat` |
+| （补记） | manual | `source=manual`，按内容归入合适大维度 |
 
 ### 生成周报
 
@@ -170,13 +189,14 @@ python scripts/merge_daily.py --date today --week
 ```
 
 3. 读取 `data/digest/week-{本周一日期}.json` 与 `templates/weekly.md`。
-4. 按周汇总，禁止编造。
+4. 按周汇总 **「本周成果」**（维度规则同日报；`channels` 含 `by_date` 时可标注哪几天失败/无记录），**「进行中 / 下周计划 / 问题与风险」留空**供用户填写；禁止编造。
 
 ## 成文规则（硬性）
 
 - **禁止**添加 digest 中不存在的工作项。
 - **禁止**臆测未在 commit/detail 中出现的功能名称。
-- manual 中的协作、会议类内容**必须**体现在日报中。
+- **禁止**自动填写「进行中 / 明日计划（周报为下周计划）/ 风险与阻塞」——留空供用户自填。
+- manual 中的内容按语义归入 **今日完成 / 本周成果** 对应大维度。
 - 用户确认后的成稿可保存到 `data/reports/daily-YYYY-MM-DD.md` 或 `data/reports/weekly-YYYY-MM-DD.md`。
 
 ## 手动补记格式

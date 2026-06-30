@@ -215,8 +215,13 @@ def list_chat_messages(
                 params["page_token"] = page_token
 
             resp = http.get(url, headers=headers, params=params)
-            resp.raise_for_status()
-            payload = resp.json()
+            try:
+                payload = resp.json()
+            except json.JSONDecodeError:
+                resp.raise_for_status()
+                raise FeishuOpenApiError(
+                    f"拉取消息失败 chat={chat_id}: 非 JSON 响应 HTTP {resp.status_code}"
+                ) from None
             if payload.get("code") != 0:
                 raise FeishuOpenApiError(
                     f"拉取消息失败 chat={chat_id}: code={payload.get('code')} msg={payload.get('msg')}"
