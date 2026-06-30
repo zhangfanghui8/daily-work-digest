@@ -28,6 +28,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "calendar_meeting": ["会议", "协作"],
         "feishu_chat": ["协作", "沟通"],
         "feishu_docs": ["文档", "产出"],
+        "yuque_docs": ["文档", "产出"],
     },
     "wecom": {
         "enabled": False,
@@ -82,6 +83,23 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "username": "",
             "password": "",
             "calendar_id": "",
+        },
+    },
+    "yuque": {
+        "docs": {
+            "enabled": False,
+            "auth_mode": "token",
+            "token": "",
+            "cookie": "",
+            "api_base": "https://www.yuque.com/api/v2",
+            "auto_repos": True,
+            "max_auto_repos": 50,
+            "repos": [],
+            "only_my_edits": True,
+            "use_content_updated_at": True,
+            "also_use_updated_at": True,
+            "page_limit": 100,
+            "max_pages": 20,
         },
     },
 }

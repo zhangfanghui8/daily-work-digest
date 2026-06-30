@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Type
 
 from .base import BaseCollector
+from .yuque_docs import YuqueDocsCollector
 from .dingtalk_schedule import DingTalkScheduleCollector
 from .feishu_chat import FeishuChatCollector
 from .feishu_docs import FeishuDocsCollector
@@ -20,6 +21,7 @@ ALL_COLLECTORS: list[Type[BaseCollector]] = [
     FeishuScheduleCollector,
     FeishuChatCollector,
     FeishuDocsCollector,
+    YuqueDocsCollector,
     DingTalkScheduleCollector,
 ]
 
@@ -31,6 +33,7 @@ __all__ = [
     "FeishuScheduleCollector",
     "FeishuChatCollector",
     "FeishuDocsCollector",
+    "YuqueDocsCollector",
     "DingTalkScheduleCollector",
     "ALL_COLLECTORS",
     "get_enabled_collectors",

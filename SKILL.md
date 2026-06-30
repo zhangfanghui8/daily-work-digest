@@ -28,13 +28,13 @@ author: 用户
 | 飞书日程 | `collectors/feishu_schedule.py` · CalDAV | ✅ 已实现 |
 | 飞书 IM | `collectors/feishu_chat.py` · 开放平台 API | ✅ 已实现 |
 | 飞书文档 | `collectors/feishu_docs.py` · 搜索 API（L1 元数据） | ✅ 已实现 |
+| 语雀文档 | `collectors/yuque_docs.py` · Open API（L1 元数据） | ✅ 已实现 |
 | 钉钉日程 | `collectors/dingtalk_schedule.py` · CalDAV | ✅ 已实现 |
-| 语雀文档 | 规划中 | 🔜 待接入 |
 | PR / Issue | `collectors/issue.py`（规划） | 🔜 待接入 |
 
 **L1 对外入口**：`scripts/collect_all.py`（调度各 Collector，继承 `BaseCollector`）
 
-**说明**：企微/飞书/钉钉日程需在 `config.yaml` 配置 CalDAV 账号。飞书 IM / 飞书文档需自建应用；**文档 token 由 Agent 运行 `feishu_oauth.py --login` 获取，用户只需在浏览器点「同意」**（见下文「飞书文档授权」）。成文时只使用**已采集**渠道的数据。
+**说明**：企微/飞书/钉钉日程需在 `config.yaml` 配置 CalDAV 账号。飞书 IM / 飞书文档需自建应用；飞书文档 token 用 `feishu_oauth.py --login`。语雀文档支持 **Token** 或 **Cookie** 认证，`repos` 可留空自动发现（见 `docs/语雀文档采集-用户指南.md`）。成文时只使用**已采集**渠道的数据。
 
 ### 飞书文档授权（Agent 必读，面向非技术用户）
 
@@ -67,6 +67,31 @@ python scripts/collect_all.py --date today --sources feishu_docs
 **用户只需说**：「帮我连接飞书文档」「配置飞书文档采集」——Agent 按上述流程处理。
 
 **一次性前置（通常由管理员完成，非每次）**：开放平台配置重定向 URL `http://127.0.0.1:8765/callback`、权限 `search:docs:read`（可选 `offline_access`）。详见 `docs/飞书文档采集-用户指南.md`。
+
+### 语雀文档配置（Agent 必读）
+
+语雀支持两种认证，用户**任选其一**：
+
+| `auth_mode` | 凭证来源 | 适用 |
+|-------------|----------|------|
+| `token`（默认） | [Token 设置页](https://www.yuque.com/settings/tokens) | 有超级会员 |
+| `cookie` | 浏览器 F12 → Cookies | 无超级会员 / Token 页不可用 |
+
+**检测**：`yuque.docs.enabled`、对应凭证（Token 或 Cookie）。
+
+**若未配置，先问用户能否创建 Token；若 Token 页需超级会员，改用 Cookie：**
+
+1. **Token 模式**：创建 Token → 填入 `yuque.docs.token`，`auth_mode: token`
+2. **Cookie 模式**：登录语雀 → F12 复制 Cookie → 填入 `yuque.docs.cookie`，`auth_mode: cookie`
+3. **`repos` 可留空**，程序会自动扫描账号下知识库；用户想缩小范围时再填白名单
+
+**采集：**
+
+```bash
+python scripts/collect_all.py --date today --sources yuque_docs
+```
+
+Cookie 过期（401）时提示用户从浏览器重新复制。详见 `docs/语雀文档采集-用户指南.md`。
 
 ## 环境准备（Agent 必读）
 

@@ -83,6 +83,27 @@ feishu:
     max_pages: 10
     search_padding_days: 7
 
+# 语雀文档：Token 或 Cookie 二选一，见 docs/语雀文档采集-用户指南.md
+yuque:
+  docs:
+    enabled: false
+    # 认证方式：token | cookie（二选一，填对应字段即可）
+    auth_mode: token
+    token: ""
+    cookie: ""
+    api_base: https://www.yuque.com/api/v2
+    # repos 留空 = 自动扫描账号下知识库（推荐）；也可填白名单缩小范围
+    auto_repos: true
+    max_auto_repos: 50
+    repos: []
+    # repos:
+    #   - your-team/your-book-slug
+    only_my_edits: true
+    use_content_updated_at: true
+    also_use_updated_at: true
+    page_limit: 100
+    max_pages: 20
+
 # 钉钉日程（CalDAV）
 # PC 端钉钉：日历 → 设置 → CalDAV 同步 → 生成专用账号密码
 dingtalk:
@@ -104,3 +125,4 @@ tags:
   calendar_meeting: ["会议", "协作"]
   feishu_chat: ["协作", "沟通"]
   feishu_docs: ["文档", "产出"]
+  yuque_docs: ["文档", "产出"]
