@@ -6,7 +6,7 @@ description: |
   当用户说「生成今天的工作日报」「汇总本周工作」「收集工作记录」「帮我写周报」「今天做了什么」「写日报」「写周报」时使用本技能。
   基于本仓库 Python 脚本已采集的真实数据成文，禁止编造未采集到的工作项。
 tags: [工作日报, 周报, 工作内容, 日报生成, 多源采集, 工作记录, 内容聚合]
-version: 1.0
+version: 1.1
 author: 用户
 ---
 
@@ -208,6 +208,64 @@ jira:
 - 用户要求从多维度工作记录生成报告
 - 用户说「收集工作记录」「今天做了什么」
 
+## 采集与成文分工（岗位视角 · Agent 必读）
+
+**产品原则：采集求全，成文求准。**
+
+| 阶段 | 是否按岗位过滤 | 规则 |
+|------|----------------|------|
+| **L1 采集** | ❌ 不按岗位 | 始终运行 `config.yaml` 里 **enabled** 的渠道（或 `collect_all.py` 默认调度）；**禁止**因「用户是测试/产品」而跳过 Git 等渠道 |
+| **L3 成文** | ✅ 按岗位裁剪 | 读取 `config.yaml` → `user.role` 决定各维度**侧重、排序**；篇幅详略听用户当次对话（如「简短版」「写详细点」）；不是渠道 dump |
+
+**默认不要**在写日报前强制问「你是研发还是测试？」——优先读配置；未配置时视为 `user.role: mixed`。
+
+### 成文视角（`user.role`）
+
+配置示例（见 `config.example.yaml`）：
+
+```yaml
+user:
+  role: mixed          # dev | product | test | mixed | other
+```
+
+| `user.role` | 成文侧重（今日完成 / 本周成果） | 可弱化或合并 |
+|-------------|--------------------------------|--------------|
+| **dev**（研发） | Git 提交与分支、Jira/禅道 **Task**、技术类飞书文档 | 纯会议若无产出合并一句；Bug 列表只保留与本人修复相关的 |
+| **test**（测试） | 禅道/Jira **Bug**、用例/回归相关 Task、缺陷沟通（IM/manual） | Git 仅保留 bugfix/与缺陷相关的 commit；Story 需求只列参与验证的 |
+| **product**（产品） | 禅道/Jira **Story/需求**、PRD/方案类文档、需求评审类日程与 manual | Git 除非用户兼研发，否则省略或一句带过 |
+| **mixed**（默认） | 代码 / 日程 / 文档 / IM / 禅道 / Jira **各维度均衡摘要** | 同类事件可合并；详略见下方「篇幅由用户对话控制」 |
+| **other** | 同 **mixed**，但更依赖 manual 与日程 | 无明确主线时不强行突出某一渠道 |
+
+**篇幅由用户对话控制（不写进 config）**
+
+- 用户未说明时：默认**适中摘要**（各维度有要点即可，同类 commit 可合并，避免 log 堆砌）。
+- 用户说「简短版 / 给领导看 / 三句话」→ 压缩篇幅。
+- 用户说「详细版 / 尽量列全 / 不要合并」→ 在 role 侧重范围内展开。
+- **禁止**因 config 缺少某字段而反复追问详略；以用户当次指令为准。
+
+**成文顺序建议**（可按 role 微调章节先后，无数据的大维度仍整节省略）：
+
+1. dev → 代码开发 → 禅道/Jira Task → 文档 → 日程 → IM  
+2. test → 禅道/Jira Bug → manual/IM → 日程 → Git（若有）→ 文档  
+3. product → 禅道/Jira Story → 文档 → 日程/manual → Git（若有）  
+4. mixed / other → 模板默认顺序：代码 → 日程 → 文档 → IM → 禅道 → Jira  
+
+**失败 / 空渠道**：仍遵守 `digest.channels` 规则（empty 无括号、failed 括号写原因）；非当前 role 侧重的渠道若 **failed**，一行带过即可，不必占大篇幅。
+
+### 何时才询问岗位（低置信 · 可跳过）
+
+仅在以下情况**可选**轻问一句；**用户不答则按 `mixed` 直接出稿（适中摘要）**：
+
+- 首次使用且 `config.yaml` 无 `user` 段，且当天多渠道数据都很满、成文主线不清晰
+- 用户明确说「给领导看」「给测试组看」「写简短版」「只要研发相关」
+- 用户说「我是测试/产品/研发」→ **写入** `config.yaml` 的 `user.role`，后续不再重复问
+
+**问法示例**（勿阻塞出稿）：
+
+> 「今天日报更偏研发交付、测试缺陷还是产品需求？不说的话我按综合各写要点。」
+
+**禁止**：用岗位决定是否采集某渠道；把「请先告诉我岗位」作为生成日报的前置必填步骤。
+
 ## 数据处理分工
 
 | 层级 | 执行者 | 做什么 |
@@ -234,9 +292,9 @@ python scripts/collect_all.py --date today --collect-only
 python scripts/merge_daily.py --date today
 ```
 
-3. 读取 `data/digest/{date}.json`、`data/manual/{date}.md`（若存在）、`templates/daily.md`。
+3. 读取 `data/digest/{date}.json`、`data/manual/{date}.md`（若存在）、`templates/daily.md`，以及 `config.yaml` 中的 `user.role`（无则 `mixed`）。
 3.5. **授权补救（Agent 自动，见「授权失败时的通用规则」）**：若已启用渠道因未登录/未授权导致 `failed`，**先问用户是否需要该渠道数据**；需要则 Agent 代跑登录/OAuth 并重采，再进入成文。不要把脚本命令丢给用户。
-4. 按模板输出日报：
+4. 按模板与 **「成文视角（user.role）」** 输出日报：
    - **仅**使用 digest.events 与 manual 中的条目填写 **「今日完成」**
    - **「进行中 / 明日计划 / 风险与阻塞」留空**（写 `-` 占位），供用户自行补充，Agent 不推断、不编造
    - **今日完成**按两个维度组织：
@@ -273,8 +331,8 @@ python scripts/merge_daily.py --date today
 python scripts/merge_daily.py --date today --week
 ```
 
-3. 读取 `data/digest/week-{本周一日期}.json` 与 `templates/weekly.md`。
-4. 按周汇总 **「本周成果」**（维度规则同日报；`channels` 含 `by_date` 时可标注哪几天失败/无记录），**「进行中 / 下周计划 / 问题与风险」留空**供用户填写；禁止编造。
+3. 读取 `data/digest/week-{本周一日期}.json` 与 `templates/weekly.md`，以及 `config.yaml` 的 `user.role`。
+4. 按周汇总 **「本周成果」**（维度与 role 侧重同日报；篇幅听用户当次对话；`channels` 含 `by_date` 时可标注哪几天失败/无记录），**「进行中 / 下周计划 / 问题与风险」留空**供用户填写；禁止编造。
 
 ## 成文规则（硬性）
 

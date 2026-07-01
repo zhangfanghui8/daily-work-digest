@@ -2,6 +2,12 @@
 
 timezone: Asia/Shanghai
 
+# 用户成文偏好（不影响采集范围；采集仍跑下方所有 enabled 渠道）
+user:
+  # 成文视角：dev | product | test | mixed | other
+  # mixed = 综合均衡（默认）；一人多岗或未配置时用这个
+  role: mixed
+
 git:
   # 要扫描的 Git 仓库绝对路径（填你日常写代码、有 .git 的项目）
   # 采集范围：仓库内所有本地/远程跟踪分支（git log --all），不限当前检出分支

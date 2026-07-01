@@ -11,6 +11,9 @@ from .paths import project_root
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "timezone": "Asia/Shanghai",
+    "user": {
+        "role": "mixed",
+    },
     "git": {
         "repos": [],
         "author_email": "",
