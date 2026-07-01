@@ -66,6 +66,22 @@ CHANNELS: tuple[ChannelDef, ...] = (
         "feishu_chat.json",
         _count_list_entries,
     ),
+    ChannelDef(
+        "zentao",
+        "zentao",
+        "禅道",
+        "禅道",
+        "zentao.json",
+        _count_list_entries,
+    ),
+    ChannelDef(
+        "jira",
+        "jira",
+        "Jira",
+        "Jira",
+        "jira.json",
+        _count_list_entries,
+    ),
 )
 
 CHANNEL_BY_ID = {c.id: c for c in CHANNELS}

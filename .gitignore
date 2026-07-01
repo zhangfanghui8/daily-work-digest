@@ -9,6 +9,10 @@ config.yaml
 # 采集数据（本地隐私）
 data/.feishu_oauth.json
 .feishu_oauth.json
+data/.zentao_token.json
+.zentao_token.json
+data/.jira_token.json
+.jira_token.json
 data/raw/
 data/digest/
 data/manual/

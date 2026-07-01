@@ -22,6 +22,14 @@
 
 <!-- source=feishu+chat · 小维度：飞书 IM -->
 
+#### 禅道
+
+<!-- source=zentao · Bug / 需求 / 任务；empty / failed 规则同其他渠道 -->
+
+#### Jira
+
+<!-- source=jira · Bug / Story / Task -->
+
 <!-- manual 补记：按内容归入对应大维度，或单独列「手动补记」 -->
 
 ### 进行中

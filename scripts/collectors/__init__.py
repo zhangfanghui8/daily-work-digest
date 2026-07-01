@@ -13,6 +13,8 @@ from .feishu_schedule import FeishuScheduleCollector
 from .git import GitCollector
 from .manual import ManualCollector
 from .wecom_schedule import WeComScheduleCollector
+from .zentao import ZenTaoCollector
+from .jira import JiraCollector
 
 # 注册所有采集器；新增渠道在此追加
 ALL_COLLECTORS: list[Type[BaseCollector]] = [
@@ -24,6 +26,8 @@ ALL_COLLECTORS: list[Type[BaseCollector]] = [
     FeishuDocsCollector,
     YuqueDocsCollector,
     DingTalkScheduleCollector,
+    ZenTaoCollector,
+    JiraCollector,
 ]
 
 __all__ = [
@@ -36,6 +40,8 @@ __all__ = [
     "FeishuDocsCollector",
     "YuqueDocsCollector",
     "DingTalkScheduleCollector",
+    "ZenTaoCollector",
+    "JiraCollector",
     "ALL_COLLECTORS",
     "get_enabled_collectors",
     "run_collectors",

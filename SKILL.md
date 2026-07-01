@@ -30,6 +30,8 @@ author: 用户
 | 飞书文档 | `collectors/feishu_docs.py` · 搜索 API（L1 元数据） | ✅ 已实现 |
 | 语雀文档 | `collectors/yuque_docs.py` · Open API（L1 元数据） | ✅ 已实现 |
 | 钉钉日程 | `collectors/dingtalk_schedule.py` · CalDAV | ✅ 已实现 |
+| 禅道 | `collectors/zentao.py` · REST API v2（Bug/需求/任务） | ✅ 已实现 |
+| Jira（私有化） | `collectors/jira.py` · REST API v2 + JQL | ✅ 已实现 |
 | PR / Issue | `collectors/issue.py`（规划） | 🔜 待接入 |
 
 **L1 对外入口**：`scripts/collect_all.py`（调度各 Collector，继承 `BaseCollector`）
@@ -93,6 +95,86 @@ python scripts/collect_all.py --date today --sources yuque_docs
 
 Cookie 过期（401）时提示用户从浏览器重新复制。详见 `docs/语雀文档采集-用户指南.md`。
 
+### 禅道配置（Agent 必读）
+
+禅道**没有**语雀那种页面申请的个人 Token。凭证通过 **Agent 代跑登录** 写入 `data/.zentao_token.json`，**禁止**要用户自己执行脚本，**禁止**把密码写进 `config.yaml`。
+
+**检测**：`zentao.enabled` + `zentao.base_url`；或运行 `python scripts/zentao_auth.py --check`（JSON 输出，`status=auth_required` 表示需登录）。
+
+**写日报时若 `digest.channels.zentao.status=failed` 且原因含「未找到禅道登录凭证」或 `auth_required`：**
+
+1. **先问用户**（白话）：「今天日报要不要包含禅道的 Bug / 需求 / 任务？」
+2. **用户同意** → 用白话说明有三种连法（**用户不自己跑脚本**），按用户选择执行：
+
+| 方式 | 用户做什么 | Agent 做什么 |
+|------|------------|--------------|
+| **A. 已有 token** | 说「禅道 token 是 xxx」（可带账号） | `python scripts/zentao_auth.py --paste-token "TOKEN" --account 账号` |
+| **B. 不知道 token 怎么拿** | 说「不知道怎么获取 token」 | **先教用户**（见下方「教用户获取 token」），拿到后再走 A |
+| **C. 直接给账号密码** | 在对话里提供禅道账号+密码 | Agent 代跑登录换 token（见下方「代登录」） |
+
+3. 看到 `ZENTAO_AUTH_OK` 后，Agent **自动**重采、归并、重写日报。
+4. **用户拒绝** → 禅道写「当日未采集（用户跳过）」或省略。
+
+**教用户获取 token（Agent 用白话逐步说明，勿丢文档链接了事）：**
+
+1. 打开禅道 → **二次开发** → **API** / **API 调试**（不同版本入口名称略有差异）。
+2. 找到 **获取 Token** 接口（v2：`POST /api.php/v2/users/login`；v1：`POST /api.php/v1/tokens`）。
+3. 在调试台填入你的 **account**、**password**，点发送。
+4. 响应 JSON 里的 `"token"` 字段即为凭证 → 复制整段 token 发给 Agent。
+5. 说明：token **短期有效**，过期后重复上述步骤或改用方式 C。
+
+**代登录（用户给了账号密码时，Agent 执行，密码不写 config.yaml）：**
+
+```bash
+# PowerShell
+$env:ZENTAO_PASSWORD="用户提供的密码"; python scripts/zentao_auth.py --login --account 用户账号
+```
+
+或使用 `--password`（Agent 仅在当次命令使用，不写入配置文件）。凭证只写入 `data/.zentao_token.json`。
+
+**为何禅道不像语雀？** 禅道没有「设置页申请长期个人 Token」；token 是登录接口换得的**短期会话凭证**。但用法一样——**拿到 token 交给 Agent 即可**；拿不到时 Agent 可代你登录。
+
+**用户只需说**：「写日报」「要禅道数据」「禅道 token 是 xxx」「账号 xxx 密码 xxx 你帮我连」——Agent 处理，不把脚本当作业丢给用户。
+
+详见 `docs/禅道采集-用户指南.md`。
+
+### Jira 配置（Agent 必读 · 当前为私有化 Server/DC）
+
+用户使用 **Personal Access Token（PAT）**，在 Jira 个人设置中创建，**不是** Atlassian Cloud 的 API Token 页面（Cloud 后续再加适配）。
+
+**最简 config：**
+
+```yaml
+jira:
+  enabled: true
+  base_url: https://jira.your-company.com
+  username: "登录名"
+  api_token: ""   # 或 Agent 写入 data/.jira_token.json
+```
+
+**写日报时若 `digest.channels.jira.status=failed` 且含「未找到 Jira API Token」：**
+
+1. 问用户要不要 Jira Issue/Bug/Story/Task 数据。
+2. 用户同意 → 教用户创建 PAT（见 `docs/Jira采集-用户指南.md`），或用户直接发 PAT + 登录名。
+3. Agent 代跑：`python scripts/jira_auth.py --paste-token "PAT" --username 登录名`
+4. 自动重采、重写日报。
+
+**用户说「不知道怎么获取 token」** → 用白话说明：Jira 右上角头像 → **个人设置 / Profile** → **Personal Access Tokens** → 创建并复制。
+
+详见 `docs/Jira采集-用户指南.md`。
+
+### 授权失败时的通用规则（Agent 必读）
+
+| 渠道 | 用户无法代劳的部分 | Agent 应做 |
+|------|-------------------|------------|
+| **禅道** | 粘贴 token；或提供账号密码由 Agent 代登录；或按 Agent 指引在 API 调试台自取 token | 询问是否需要 → 按 A/B/C 处理 → 重采 |
+| **Jira** | 在 Jira 个人设置创建 PAT 并粘贴给 Agent | 询问是否需要 → `--paste-token` → 重采 |
+| **飞书文档** | 浏览器点「同意授权」 | 询问是否需要 → 代跑 `feishu_oauth.py --login` → 重采 |
+| **语雀 Cookie** | 浏览器复制 Cookie | 询问是否需要 → 帮填 `config.yaml` 的 cookie → 重采 |
+| **飞书 IM** | 管理员开权限 | 说明需管理员审批，**无法**代登录；日报标注采集失败原因 |
+
+**硬性**：成文阶段发现 `failed` 时，**先尝试按上表补救**（征得用户同意），再输出最终日报；不要把终端命令当作给用户的「作业」。
+
 ## 环境准备（Agent 必读）
 
 **核心原则**：使用本技能前，若缺少运行条件（Python、依赖包、config.yaml、git.repos 配置等），Agent **须先检测 → 用白话告知缺什么、打算做什么 → 征得用户同意 → 再自行在终端处理**。不要把 `pip install`、`python scripts/...` 等命令丢给用户执行。
@@ -153,6 +235,7 @@ python scripts/merge_daily.py --date today
 ```
 
 3. 读取 `data/digest/{date}.json`、`data/manual/{date}.md`（若存在）、`templates/daily.md`。
+3.5. **授权补救（Agent 自动，见「授权失败时的通用规则」）**：若已启用渠道因未登录/未授权导致 `failed`，**先问用户是否需要该渠道数据**；需要则 Agent 代跑登录/OAuth 并重采，再进入成文。不要把脚本命令丢给用户。
 4. 按模板输出日报：
    - **仅**使用 digest.events 与 manual 中的条目填写 **「今日完成」**
    - **「进行中 / 明日计划 / 风险与阻塞」留空**（写 `-` 占位），供用户自行补充，Agent 不推断、不编造
@@ -161,7 +244,7 @@ python scripts/merge_daily.py --date today
      - **小维度（渠道）**：大维度下的具体来源，见下表
    - **渠道无 events 时**，读取 digest.`channels` 区分（**禁止混写、禁止编造**）：
      - `status=empty` →「**{label}：当日无记录**」（不写括号说明）
-     - `status=failed` →「**{label}：采集失败**（{message}）」——**仅失败时用括号写原因**
+     - `status=failed` →「**{label}：采集失败**（{message}）」——**仅失败时用括号写原因**；若用户已明确跳过授权补救，可写「当日未采集（用户跳过）」
      - `status=not_collected` →「**{label}：未采集**（{message}）」
      - `status=ok` 且有 events → 正常列出，不写「采集成功」
      - 未出现在 `channels` → 配置未启用，成文省略
@@ -177,6 +260,8 @@ python scripts/merge_daily.py --date today
 | 日程 | 企微 / 飞书 / 钉钉 | `source=wecom\|feishu\|dingtalk`, `type=meeting` |
 | 文档 | 飞书文档 / 语雀 | `source=feishu`, `type=document`；`source=yuque`, `type=document` |
 | IM | 飞书 IM | `source=feishu`, `type=chat` |
+| 禅道 | Bug / 需求 / 任务 | `source=zentao`, `type=bug\|story\|task` |
+| Jira | Bug / Story / Task | `source=jira`, `type=bug\|story\|task\|issue` |
 | （补记） | manual | `source=manual`，按内容归入合适大维度 |
 
 ### 生成周报

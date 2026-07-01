@@ -28,6 +28,8 @@
 | **飞书 IM 群聊** | 可选，需自建应用并配置 `feishu.chat`（见用户指南） |
 | **飞书文档** | 可选，需 OAuth 授权 `feishu.docs`（见用户指南） |
 | **语雀文档** | 可选，Token 或 Cookie + `yuque.docs.repos`（见用户指南） |
+| **禅道** | 可选，填 `zentao.base_url` + 一次性登录 | 见 [禅道指南](docs/禅道采集-用户指南.md) |
+| **Jira（私有化）** | 可选，填 `jira.base_url` + PAT | 见 [Jira 指南](docs/Jira采集-用户指南.md) |
 | **钉钉日程** | 可选，需配置 CalDAV 账号（钉钉客户端获取） |
 
 ---
@@ -78,6 +80,8 @@ python scripts/collect_all.py --date today
 - **飞书 IM**：开放平台创建企业自建应用，申请 IM 读权限并将机器人加入目标群。详见 [飞书 IM 指南](docs/飞书IM采集-用户指南.md)。
 - **飞书文档**：对 AI 说「帮我连接飞书文档」；授权时在浏览器点同意即可。详见 [飞书文档指南](docs/飞书文档采集-用户指南.md)。
 - **语雀文档**：Token 或浏览器 Cookie 二选一，配置知识库白名单。详见 [语雀文档指南](docs/语雀文档采集-用户指南.md)。
+- **禅道**：配置 `zentao.base_url`，AI 代你登录或粘贴 token。详见 [禅道指南](docs/禅道采集-用户指南.md)。
+- **Jira（私有化）**：配置 `jira.base_url` + PAT。详见 [Jira 指南](docs/Jira采集-用户指南.md)。
 - **钉钉日程**：PC 端钉钉「日历 → 设置 → CalDAV 同步」生成专用账号密码，服务器 `caldav.mxhichina.com`。
 - **定时采集**：可用 Windows 任务计划程序每天固定时间运行 `collect_all.py`，详见 [快速开始](docs/快速开始.md)。
 

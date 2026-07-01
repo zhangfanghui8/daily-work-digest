@@ -116,6 +116,24 @@ dingtalk:
     # 可选：日历 ID，403 时可填
     calendar_id: ""
 
+# 禅道（Bug / 需求 / 任务）：见 docs/禅道采集-用户指南.md
+zentao:
+  enabled: false
+  base_url: https://zentao.your-company.com
+  account: ""   # 可选：禅道登录名，Agent 代登录时可少问一项
+  # 密码仅登录时用，不写 config；token 缓存 data/.zentao_token.json
+  token_cache: data/.zentao_token.json
+
+# Jira 私有化 Server/Data Center：见 docs/Jira采集-用户指南.md
+jira:
+  enabled: false
+  base_url: https://jira.your-company.com
+  username: ""        # Jira 登录名（建议填写，与 PAT 配合 Basic 认证）
+  api_token: ""       # Personal Access Token；或写入 data/.jira_token.json
+  token_cache: data/.jira_token.json
+  project_keys: []    # 留空=全部项目；如 ["PROJ", "QA"]
+  only_my_activity: true
+
 tags:
   commit_fix: ["开发", "bugfix"]
   commit_feat: ["开发", "功能"]
@@ -127,3 +145,10 @@ tags:
   feishu_chat: ["协作", "沟通"]
   feishu_docs: ["文档", "产出"]
   yuque_docs: ["文档", "产出"]
+  zentao_bug: ["测试", "bug"]
+  zentao_story: ["产品", "需求"]
+  zentao_task: ["开发", "任务"]
+  jira_bug: ["测试", "bug"]
+  jira_story: ["产品", "需求"]
+  jira_task: ["开发", "任务"]
+  jira_issue: ["协作", "issue"]

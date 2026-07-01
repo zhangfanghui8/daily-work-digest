@@ -238,6 +238,90 @@ def dingtalk_schedule_to_events(
     return events
 
 
+def _zentao_tags(object_type: str, tags_cfg: dict[str, Any]) -> list[str]:
+    key_map = {
+        "bug": "zentao_bug",
+        "story": "zentao_story",
+        "task": "zentao_task",
+    }
+    defaults = {
+        "bug": ["测试", "bug"],
+        "story": ["产品", "需求"],
+        "task": ["开发", "任务"],
+    }
+    cfg_key = key_map.get(object_type, "")
+    if cfg_key and tags_cfg.get(cfg_key):
+        return list(tags_cfg[cfg_key])
+    return list(defaults.get(object_type, ["协作"]))
+
+
+def zentao_to_events(
+    raw: dict[str, Any],
+    tags_cfg: dict[str, Any],
+) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for entry in raw.get("entries") or []:
+        object_type = entry.get("object_type") or "task"
+        title = entry.get("title") or "禅道记录"
+        events.append(
+            {
+                "id": f"zentao-{entry.get('id', len(events)+1)}",
+                "time": entry.get("time") or "12:00:00",
+                "source": "zentao",
+                "type": object_type,
+                "title": title,
+                "detail": entry.get("detail") or "",
+                "url": entry.get("url") or "",
+                "tags": _zentao_tags(object_type, tags_cfg),
+                "raw": entry,
+            }
+        )
+    return events
+
+
+def _jira_tags(object_type: str, tags_cfg: dict[str, Any]) -> list[str]:
+    key_map = {
+        "bug": "jira_bug",
+        "story": "jira_story",
+        "task": "jira_task",
+        "issue": "jira_issue",
+    }
+    defaults = {
+        "bug": ["测试", "bug"],
+        "story": ["产品", "需求"],
+        "task": ["开发", "任务"],
+        "issue": ["协作", "issue"],
+    }
+    cfg_key = key_map.get(object_type, "")
+    if cfg_key and tags_cfg.get(cfg_key):
+        return list(tags_cfg[cfg_key])
+    return list(defaults.get(object_type, ["协作"]))
+
+
+def jira_to_events(
+    raw: dict[str, Any],
+    tags_cfg: dict[str, Any],
+) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for entry in raw.get("entries") or []:
+        object_type = entry.get("object_type") or "issue"
+        title = entry.get("title") or "Jira Issue"
+        events.append(
+            {
+                "id": f"jira-{entry.get('id', len(events)+1)}",
+                "time": entry.get("time") or "12:00:00",
+                "source": "jira",
+                "type": object_type,
+                "title": title,
+                "detail": entry.get("detail") or "",
+                "url": entry.get("url") or "",
+                "tags": _jira_tags(object_type, tags_cfg),
+                "raw": entry,
+            }
+        )
+    return events
+
+
 def normalize_time_for_sort(value: str) -> str:
     if not value:
         return "00:00:00"
@@ -405,6 +489,16 @@ def _load_raw_events(
     if dingtalk_file.is_file() and _should_load_channel_raw("dingtalk", channels):
         dingtalk_raw = json.loads(dingtalk_file.read_text(encoding="utf-8"))
         events.extend(dingtalk_schedule_to_events(dingtalk_raw, tags_cfg))
+
+    zentao_file = day_raw / "zentao.json"
+    if zentao_file.is_file() and _should_load_channel_raw("zentao", channels):
+        zentao_raw = json.loads(zentao_file.read_text(encoding="utf-8"))
+        events.extend(zentao_to_events(zentao_raw, tags_cfg))
+
+    jira_file = day_raw / "jira.json"
+    if jira_file.is_file() and _should_load_channel_raw("jira", channels):
+        jira_raw = json.loads(jira_file.read_text(encoding="utf-8"))
+        events.extend(jira_to_events(jira_raw, tags_cfg))
 
     return events
 
